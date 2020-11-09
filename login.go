@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -19,6 +20,7 @@ func signupPage(res http.ResponseWriter, req *http.Request) {
 
 	username := req.FormValue("username")
 	password := req.FormValue("password")
+	email := req.FormValue("email")
 
 	var user string
 
@@ -32,13 +34,13 @@ func signupPage(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO users(username, password) VALUES(?, ?)", username, hashedPassword)
+		_, err = db.Exec("INSERT INTO users(username, password, email) VALUES(?, ?, ?)", username, hashedPassword, email)
 		if err != nil {
 			http.Error(res, "Server error, unable to create your account.", 500)
 			return
 		}
 
-		res.Write([]byte("User created!"))
+		res.Write([]byte("User " + username + " created with success"))
 		return
 	case err != nil:
 		http.Error(res, "Server error, unable to create your account.", 500)
@@ -54,13 +56,14 @@ func loginPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	username := req.FormValue("username")
+	email := req.FormValue("email")
 	password := req.FormValue("password")
 
 	var databaseUsername string
 	var databasePassword string
+	var databaseEmail string
 
-	err := db.QueryRow("SELECT username, password FROM users WHERE username=?", username).Scan(&databaseUsername, &databasePassword)
+	err := db.QueryRow("SELECT username, password, email FROM users WHERE email=?", email).Scan(&databaseUsername, &databasePassword, &databaseEmail)
 
 	if err != nil {
 		http.Redirect(res, req, "/login", 301)
@@ -73,7 +76,7 @@ func loginPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res.Write([]byte("Hello" + databaseUsername))
+	res.Write([]byte("Hello " + databaseUsername))
 
 }
 
